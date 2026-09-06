@@ -25,7 +25,6 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.AnnotationMetadata;
 
-import java.lang.annotation.*;
 
 /**
  * Consolidated auto-configuration for Ridehub Feign clients.
@@ -73,28 +72,7 @@ public class RidehubFeignAutoConfiguration {
         return Logger.Level.FULL;
     }
 
-    // ================== Enable Annotation ==================
-    /**
-     * Enable auto-registration of Ridehub Feign clients.
-     * This annotation will automatically scan and register Feign client beans
-     * based on configuration properties, eliminating the need for manual
-     * Feign client configuration.
-     *
-     * Usage:
-     * <pre>
-     * &#64;SpringBootApplication
-     * &#64;EnableRidehubFeign
-     * public class Application {
-     *     public static void main(String[] args) {
-     *         SpringApplication.run(Application.class, args);
-     *     }
-     * }
-     * </pre>
-     */
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Import(RidehubFeignRegistrar.class)
-    public @interface EnableRidehubFeign { }
+
 
     // ================== AUTOMATIC FEIGN CLIENT REGISTRATION ==================
 

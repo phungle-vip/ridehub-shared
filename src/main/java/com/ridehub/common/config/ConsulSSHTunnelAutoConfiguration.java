@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
  */
 @AutoConfiguration
 @ConditionalOnConsulEnabled
-@ConditionalOnProperty(value = "tunnel.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "tunnel.enabled", havingValue = "true", matchIfMissing = false)
 @EnableConfigurationProperties(ConsulSSHTunnelProperties.class)
 @Import(ConsulSSHTunnel.class)
 public class ConsulSSHTunnelAutoConfiguration {

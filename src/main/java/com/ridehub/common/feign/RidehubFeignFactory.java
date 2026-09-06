@@ -13,9 +13,14 @@ import org.springframework.cloud.openfeign.FeignClientBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import org.slf4j.LoggerFactory;
+import org.springframework.cloud.client.ServiceInstance;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Consolidated factory for creating Feign client instances.
@@ -60,6 +65,61 @@ public class RidehubFeignFactory {
                     builder.logLevel(level);
                 })
                 .build();
+    }
+
+    /**
+     * Resolves a ServiceInstance using LoadBalancerClient, trying multiple candidate
+     * naming conventions (e.g. msroute, ms_route, ms-route, msroutedev, ms_routedev)
+     */
+    public static ServiceInstance resolveServiceInstance(LoadBalancerClient loadBalancerClient, String serviceId) {
+        if (loadBalancerClient == null || serviceId == null || serviceId.isBlank()) {
+            return null;
+        }
+
+        // 1. Exact match
+        ServiceInstance instance = loadBalancerClient.choose(serviceId);
+        if (instance != null) {
+            return instance;
+        }
+
+        // 2. Build candidate variations
+        List<String> candidates = new ArrayList<>();
+
+        // e.g. msroute -> ms_route, ms-route
+        if (serviceId.startsWith("ms") && serviceId.length() > 2
+                && serviceId.charAt(2) != '_' && serviceId.charAt(2) != '-') {
+            String suffix = serviceId.substring(2);
+            candidates.add("ms_" + suffix);
+            candidates.add("ms-" + suffix);
+        }
+        // e.g. ms_route -> msroute, ms-route
+        if (serviceId.contains("_")) {
+            candidates.add(serviceId.replace("_", ""));
+            candidates.add(serviceId.replace("_", "-"));
+        }
+        // e.g. ms-route -> msroute, ms_route
+        if (serviceId.contains("-")) {
+            candidates.add(serviceId.replace("-", ""));
+            candidates.add(serviceId.replace("-", "_"));
+        }
+
+        // Also check dev suffix variations (used in local ConsulSSHTunnel dev profile)
+        int size = candidates.size();
+        for (int i = 0; i < size; i++) {
+            candidates.add(candidates.get(i) + "dev");
+        }
+        candidates.add(serviceId + "dev");
+
+        for (String candidate : candidates) {
+            instance = loadBalancerClient.choose(candidate);
+            if (instance != null) {
+                LoggerFactory.getLogger(RidehubFeignFactory.class)
+                        .info("Resolved service [{}] via candidate [{}] -> {}", serviceId, candidate, instance.getUri());
+                return instance;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -116,9 +176,9 @@ public class RidehubFeignFactory {
 
         @Override
         public T getObject() throws Exception {
-            var instance = loadBalancerClient.choose(serviceId);
+            var instance = resolveServiceInstance(loadBalancerClient, serviceId);
             if (instance == null) {
-                throw new IllegalStateException("Service [" + serviceId + "] not found");
+                throw new IllegalStateException("Service [" + serviceId + "] not found via discovery (checked variations)");
             }
             String base = instance.getUri().toString().replaceAll("/+$", "");
 
@@ -243,9 +303,9 @@ public class RidehubFeignFactory {
                 if (feignClient == null) {
                     synchronized (this) {
                         if (feignClient == null) {
-                            var instance = loadBalancerClient.choose(serviceId);
+                            var instance = resolveServiceInstance(loadBalancerClient, serviceId);
                             if (instance == null) {
-                                throw new IllegalStateException("Service [" + serviceId + "] not found via discovery");
+                                throw new IllegalStateException("Service [" + serviceId + "] not found via discovery (checked variations)");
                             }
                             String baseUrl = instance.getUri().toString();
 

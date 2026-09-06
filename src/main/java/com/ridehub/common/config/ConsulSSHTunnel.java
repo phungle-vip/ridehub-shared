@@ -51,6 +51,12 @@ public class ConsulSSHTunnel {
 
     private void createTunnel() {
         try {
+            if (tunnelProperties.getVpsHost() == null || tunnelProperties.getVpsHost().isBlank()
+                    || tunnelProperties.getVpsUser() == null || tunnelProperties.getVpsUser().isBlank()) {
+                log.info("Consul SSH tunnel skipped: tunnel.vps-host or tunnel.vps-user is not configured");
+                return;
+            }
+
             Thread.sleep(2000); // Wait for app to start
             JSch jsch = new JSch();
             session = jsch.getSession(
@@ -85,11 +91,15 @@ public class ConsulSSHTunnel {
     @Profile("dev") // Only create this bean in dev profile
     ConsulRegistrationCustomizer portCustomizer() {
         return registration -> {
+            String vpsHost = tunnelProperties.getVpsHost();
+            if (vpsHost == null || vpsHost.isBlank()) {
+                return; // Do not alter registration if tunnel is not active
+            }
+
             // Use configured values or defaults
             String serviceId = tunnelProperties.getServiceId() != null ? tunnelProperties.getServiceId() : appName;
             String serviceName = tunnelProperties.getServiceName() != null ? tunnelProperties.getServiceName()
                     : appName;
-            String vpsHost = tunnelProperties.getVpsHost();
             int tunnelPort = tunnelProperties.getTunnelPort();
             String devSuffix = tunnelProperties.getDevSuffix();
 

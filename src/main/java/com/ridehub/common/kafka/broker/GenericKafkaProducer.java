@@ -14,20 +14,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
 
 /**
  * Generic Kafka producer that supplies EventEnvelope messages via Supplier
  * binding.
  * No StreamBridge usage — messages are queued and emitted by get().
+ * 
+ * Uses LinkedBlockingQueue instead of AtomicReference to prevent message loss
+ * when multiple threads produce events concurrently.
  */
 @Component
 public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
 
     private final KafkaUtilityService kafkaUtilityService;
-    private final AtomicReference<EventEnvelope> messageToSupply = new AtomicReference<>();
-    private final AtomicReference<String> keyToSupply = new AtomicReference<>();
+    private final LinkedBlockingQueue<QueuedEvent> eventQueue = new LinkedBlockingQueue<>();
     private static final Logger log = LoggerFactory.getLogger(GenericKafkaProducer.class);
 
     @Value("${spring.application.name:default-service}")
@@ -44,13 +46,12 @@ public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
 
     @Override
     public Message<EventEnvelope> get() {
-        EventEnvelope event = messageToSupply.getAndSet(null);
-        String key = keyToSupply.getAndSet(null);
+        QueuedEvent queued = eventQueue.poll();
 
-        if (event != null) {
-            log.info("Supplying event with unique key: {} to reactive stream", key);
-            return MessageBuilder.withPayload(event)
-                    .setHeader(KafkaHeaders.KEY, key)
+        if (queued != null) {
+            log.info("Supplying event with unique key: {} to reactive stream", queued.key);
+            return MessageBuilder.withPayload(queued.envelope)
+                    .setHeader(KafkaHeaders.KEY, queued.key)
                     .setHeader("serviceName", serviceName)
                     .build();
         } else {
@@ -61,19 +62,20 @@ public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
 
     /**
      * Queue event for reactive stream processing.
+     * Thread-safe: uses BlockingQueue so concurrent calls won't lose messages.
      */
     protected <T> String queueEvent(String eventName, T payload, String key) {
         try {
+            // Single call to AvroConverter (fixed: was previously calling it twice)
             EventEnvelope envelope = kafkaUtilityService.createEventEnvelope(eventName, payload);
-            String uniqueKey = kafkaUtilityService.prepareAndCreateEvent(eventName, payload, key);
+            String uniqueKey = kafkaUtilityService.generateEventKey(key);
 
-            if (envelope == null || uniqueKey == null) {
-                log.error("Failed to create envelope or key for event: {}", eventName);
+            if (envelope == null) {
+                log.error("Failed to create envelope for event: {}", eventName);
                 return null;
             }
 
-            messageToSupply.set(envelope);
-            keyToSupply.set(uniqueKey);
+            eventQueue.offer(new QueuedEvent(envelope, uniqueKey));
 
             log.info("Event {} queued successfully with key: {}", eventName, uniqueKey);
             return uniqueKey;
@@ -111,5 +113,11 @@ public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
 
     protected String getServiceName() {
         return serviceName;
+    }
+
+    /**
+     * Internal record to hold queued events with their keys.
+     */
+    private record QueuedEvent(EventEnvelope envelope, String key) {
     }
 }

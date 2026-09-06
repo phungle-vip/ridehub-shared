@@ -3,6 +3,7 @@ package com.ridehub.common.kafka.service;
 import com.ridehub.avro.common.EventEnvelope;
 import com.ridehub.common.kafka.config.KafkaLibraryProperties;
 import com.ridehub.common.kafka.handler.EventDispatcher;
+import com.ridehub.common.kafka.handler.EventMessage;
 import com.ridehub.common.kafka.util.AvroConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,33 +48,29 @@ public class KafkaUtilityService {
     // --- Generic Helper for KafkaProducer ---
 
     /**
-     * Prepare and create a key for the event (envelope creation is separate)
-     */
-    public <T> String prepareAndCreateEvent(String eventName, T payload, String key) {
-        try {
-            // Validate we can construct an envelope (side-effect: schema validation)
-            AvroConverter.createEvent(eventName, payload);
-            String uniqueKey = (key != null) ? key : UUID.randomUUID().toString();
-            PRODUCER_LOG.info("Generated key for Kafka message: {} (eventName: {})", uniqueKey, eventName);
-            return uniqueKey;
-        } catch (Exception e) {
-            PRODUCER_LOG.error("Error creating event envelope for eventName {}: {}", eventName, e.getMessage(), e);
-            return null;
-        }
-    }
-
-    /**
      * Create an EventEnvelope for any payload type
      */
     public <T> EventEnvelope createEventEnvelope(String eventName, T payload) {
         return AvroConverter.createEvent(eventName, payload);
     }
 
+    /**
+     * Generate a unique key for the event message
+     */
+    public String generateEventKey(String key) {
+        String uniqueKey = (key != null) ? key : UUID.randomUUID().toString();
+        PRODUCER_LOG.info("Generated key for Kafka message: {}", uniqueKey);
+        return uniqueKey;
+    }
+
     // --- Consumer Helpers - Simplified for Spring Cloud Stream DLQ ---
 
     /**
      * Process message synchronously - exceptions will trigger Spring Cloud Stream
-     * DLQ
+     * DLQ.
+     * 
+     * Optimized flow: Avro payload JSON string → JsonNode → dispatch
+     * (eliminated intermediate Class.forName + re-serialize steps)
      */
     public void processMessage(EventEnvelope avroMessage) {
         String eventName = null;
@@ -89,18 +86,19 @@ public class KafkaUtilityService {
 
             CONSUMER_LOG.debug("Processing message for event: {}", eventName);
 
-            Object payload = (avroMessage.getPayload() != null)
-                    ? AvroConverter.convertPayload(avroMessage)
-                    : null;
+            // Optimized: parse Avro payload JSON string directly to JsonNode
+            // instead of Class.forName → Object → writeValueAsString → readTree
+            JsonNode payloadNode = null;
+            if (avroMessage.getPayload() != null) {
+                payloadNode = objectMapper.readTree(avroMessage.getPayload().toString());
+            }
 
-            // Build envelope for dispatcher and dispatch
-            com.ridehub.common.kafka.handler.EventEnvelope<JsonNode> dispatcherEnvelope = prepareEventEnvelopeForDispatcher(
-                    eventName, payload);
-
-            dispatcher.dispatch(dispatcherEnvelope);
+            // Build EventMessage for dispatcher and dispatch
+            EventMessage<JsonNode> dispatcherMessage = new EventMessage<>(eventName, payloadNode);
+            dispatcher.dispatch(dispatcherMessage);
 
             // SSE broadcast to clients (optional visibility)
-            dispatchToSseClients(eventName, payload, emitters);
+            dispatchToSseClients(eventName, payloadNode, emitters);
 
             CONSUMER_LOG.info("Successfully processed message for event: {}", eventName);
 
@@ -160,23 +158,6 @@ public class KafkaUtilityService {
     }
 
     // --- Helper Methods ---
-
-    public com.ridehub.common.kafka.handler.EventEnvelope<JsonNode> prepareEventEnvelopeForDispatcher(
-            String eventName, Object payload) {
-        if (payload == null) {
-            CONSUMER_LOG.warn("Payload is null, cannot prepare EventEnvelope for dispatcher for event: {}", eventName);
-            return new com.ridehub.common.kafka.handler.EventEnvelope<>(eventName, null);
-        }
-
-        try {
-            String payloadJson = objectMapper.writeValueAsString(payload);
-            JsonNode payloadJsonNode = objectMapper.readTree(payloadJson);
-            return new com.ridehub.common.kafka.handler.EventEnvelope<>(eventName, payloadJsonNode);
-        } catch (Exception e) {
-            CONSUMER_LOG.error("Error serializing payload for dispatcher: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to prepare EventEnvelope for dispatcher", e);
-        }
-    }
 
     public Map<String, SseEmitter> getEmitters() {
         return emitters;

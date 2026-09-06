@@ -1,15 +1,16 @@
 package com.ridehub.common.kafka.handler;
 
-// wraps any payload with an eventName
+// wraps any payload with an eventName — renamed from EventEnvelope to avoid
+// conflict with com.ridehub.avro.common.EventEnvelope (Avro record)
 
-public class EventEnvelope<T> {
+public class EventMessage<T> {
     private String eventName;
     private T payload;
 
-    public EventEnvelope() {
+    public EventMessage() {
     }
 
-    public EventEnvelope(String eventName, T payload) {
+    public EventMessage(String eventName, T payload) {
         this.eventName = eventName;
         this.payload = payload;
     }

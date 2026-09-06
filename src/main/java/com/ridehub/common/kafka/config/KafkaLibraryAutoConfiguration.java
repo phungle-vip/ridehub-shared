@@ -79,8 +79,6 @@ public class KafkaLibraryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public KafkaUtilityService kafkaUtilityService(
-            KafkaJobRunner jobRunner,
-            RetryTemplate retryTemplate,
             EventDispatcher dispatcher,
             Map<String, SseEmitter> emitters,
             @Qualifier("kafkaObjectMapper") ObjectMapper objectMapper,

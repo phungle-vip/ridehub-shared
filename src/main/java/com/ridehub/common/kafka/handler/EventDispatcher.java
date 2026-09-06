@@ -1,6 +1,7 @@
 package com.ridehub.common.kafka.handler;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,10 +33,10 @@ public class EventDispatcher {
     /**
      * Dispatches events from JSON format
      * 
-     * @param env The event envelope containing JsonNode payload
+     * @param env The event message containing JsonNode payload
      * @throws Exception If dispatching fails
      */
-    public void dispatch(EventEnvelope<JsonNode> env) throws Exception {
+    public void dispatch(EventMessage<JsonNode> env) throws Exception {
         String name = env.getEventName();
         LOG.debug("Dispatching event: {}", name);
         
@@ -43,10 +44,10 @@ public class EventDispatcher {
         if (handler == null)
             throw new IllegalArgumentException("No handler for event: " + name);
 
-        // Figure out T at runtime
+        // Resolve the generic type parameter T from EventHandler<T>,
+        // handling CGLIB proxies and multiple interfaces safely
         JavaType type = mapper.getTypeFactory()
-                .constructType(((ParameterizedType) handler.getClass()
-                        .getGenericInterfaces()[0]).getActualTypeArguments()[0]);
+                .constructType(resolveEventHandlerType(handler));
         
         Object dto = mapper.treeToValue(env.getPayload(), type);
         LOG.debug("Converted payload to type: {}", type);
@@ -54,5 +55,52 @@ public class EventDispatcher {
         // noinspection unchecked
         ((EventHandler<Object>) handler).handle(dto);
         LOG.debug("Event handled successfully");
+    }
+
+    /**
+     * Resolves the generic type argument T from EventHandler<T>, safely handling
+     * CGLIB proxies, multiple interfaces, and abstract base classes.
+     */
+    private Type resolveEventHandlerType(EventHandler<?> handler) {
+        Class<?> clazz = handler.getClass();
+
+        // If it's a Spring CGLIB proxy, use the superclass (the actual bean class)
+        if (clazz.getName().contains("$$")) {
+            clazz = clazz.getSuperclass();
+        }
+
+        // Search through all generic interfaces for EventHandler<T>
+        for (Type iface : clazz.getGenericInterfaces()) {
+            if (iface instanceof ParameterizedType pt) {
+                if (EventHandler.class.isAssignableFrom((Class<?>) pt.getRawType())) {
+                    return pt.getActualTypeArguments()[0];
+                }
+            }
+        }
+
+        // Fallback: check superclass chain
+        Type superclass = clazz.getGenericSuperclass();
+        while (superclass != null) {
+            if (superclass instanceof ParameterizedType pt) {
+                Type raw = pt.getRawType();
+                if (raw instanceof Class<?> rawClass) {
+                    // Check if superclass itself implements EventHandler
+                    for (Type superIface : rawClass.getGenericInterfaces()) {
+                        if (superIface instanceof ParameterizedType spt
+                                && EventHandler.class.isAssignableFrom((Class<?>) spt.getRawType())) {
+                            return pt.getActualTypeArguments()[0];
+                        }
+                    }
+                }
+            }
+            if (superclass instanceof Class<?> sc) {
+                superclass = sc.getGenericSuperclass();
+            } else {
+                break;
+            }
+        }
+
+        throw new IllegalStateException(
+                "Cannot resolve generic type for EventHandler implementation: " + handler.getClass().getName());
     }
 }
