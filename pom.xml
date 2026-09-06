@@ -18,7 +18,7 @@
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/maian3333/ridehub-central-common</url>
+      <url>https://maven.pkg.github.com/phungle-vip/ridehub-shared</url>
     </repository>
   </distributionManagement>
    <properties>
@@ -58,6 +58,12 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
+    <!-- RideHub Contract (Schemas, Models & Events) -->
+    <dependency>
+      <groupId>com.ridehub</groupId>
+      <artifactId>ridehub-contract</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+    </dependency>
     <!-- OpenFeign -->
     <dependency>
       <groupId>org.springframework.cloud</groupId>
