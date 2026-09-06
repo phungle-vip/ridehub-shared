@@ -13,7 +13,7 @@ info:
   version: 0.0.1
 servers:
 - description: Generated server url
-  url: https://apigateway.microservices.appf4s.io.vn/services/msuser
+  url: https://apigateway.phungvip.io.vn/services/msuser
 tags:
 - description: AI Chatbot API for RideHub
   name: Chatbot

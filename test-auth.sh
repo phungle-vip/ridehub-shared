@@ -4,7 +4,7 @@ set -euo pipefail
 # =========================
 # HARD-CODE CONFIG (TEST ONLY)
 # =========================
-TOKEN_URL="https://keycloak.appf4.io.vn/realms/jhipster/protocol/openid-connect/token"
+TOKEN_URL="https://keycloak.phungvip.io.vn/realms/jhipster/protocol/openid-connect/token"
 
 # Client
 CLIENT_ID="web_app"
@@ -15,9 +15,9 @@ USERNAME="admin"
 PASSWORD="admin"
 
 # Consul + Gateway
-CONSUL_URL="https://consul.appf4.io.vn"
+CONSUL_URL="https://consul.phungvip.io.vn"
 CONSUL_ACL_TOKEN="f4security"
-GATEWAY_URL="https://apigateway.microservices.appf4.io.vn"
+GATEWAY_URL="https://apigateway.phungvip.io.vn"
 
 # Set to 1 if you want to print JSON responses (might leak info)
 DEBUG=1

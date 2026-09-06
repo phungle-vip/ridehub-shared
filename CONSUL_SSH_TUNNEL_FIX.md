@@ -5,7 +5,7 @@ The ConsulSSHTunnel configuration in the central library was not properly overri
 
 ## Root Cause
 1. The `ms_route/src/main/resources/config/bootstrap.yml` file had hardcoded values for Consul discovery configuration:
-   - `ip-address: appf4s.io.vn`
+   - `ip-address: phungvip.io.vn`
    - `port: 8500`
    - `prefer-ip-address: true`
 
@@ -15,7 +15,7 @@ The ConsulSSHTunnel configuration in the central library was not properly overri
 
 ### 1. Updated Bootstrap Configuration Files
 - **ms_route/src/main/resources/config/bootstrap.yml**: Changed hardcoded values to property placeholders:
-  - `ip-address: ${tunnel.vps-host:appf4s.io.vn}`
+  - `ip-address: ${tunnel.vps-host:phungvip.io.vn}`
   - `port: ${tunnel.tunnel-port:8500}`
   - `prefer-ip-address: false`
 

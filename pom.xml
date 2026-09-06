@@ -26,15 +26,15 @@
     <spring-cloud.version>2024.0.1</spring-cloud.version>
     <openapi.generator.version>7.14.0</openapi.generator.version>
     <!-- Keycloak (for scripts) -->
-    <keycloak.token.url>https://keycloak.appf4.io.vn/realms/jhipster/protocol/openid-connect/token</keycloak.token.url>
+    <keycloak.token.url>https://keycloak.phungvip.io.vn/realms/jhipster/protocol/openid-connect/token</keycloak.token.url>
     <keycloak.clientId>web_app</keycloak.clientId>
     <keycloak.username>${env.KEYCLOAK_USERNAME}</keycloak.username>
     <keycloak.password>${env.KEYCLOAK_PASSWORD}</keycloak.password>
     <keycloak.secret>${env.KEYCLOAK_SECRET}</keycloak.secret>
     <!-- Consul + Gateway -->
-    <consul.url>https://consul.appf4.io.vn</consul.url>
+    <consul.url>https://consul.phungvip.io.vn</consul.url>
     <consul.acl-token>${env.CONSUL_ACL_TOKEN}</consul.acl-token>
-    <gateway.url>https://apigateway.microservices.appf4.io.vn</gateway.url>
+    <gateway.url>https://apigateway.phungvip.io.vn</gateway.url>
     <!-- OpenAPI paths -->
     <openapi.auth.file>${project.build.directory}/openapi-auth.properties</openapi.auth.file>
     <openapi.dir>${project.build.directory}/openapi</openapi.dir>

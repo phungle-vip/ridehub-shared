@@ -44,7 +44,7 @@ public class ApiClient {
   public interface Api {}
 
   protected ObjectMapper objectMapper;
-  protected String basePath = "https://apigateway.microservices.appf4s.io.vn/services/msuser";
+  protected String basePath = "https://apigateway.phungvip.io.vn/services/msuser";
   protected Map<String, RequestInterceptor> apiAuthorizations;
   protected Feign.Builder feignBuilder;
 
