@@ -12,13 +12,6 @@ jobs:
       contents: read
       packages: write
 
-    env:
-      CONSUL_ACL_TOKEN: ${{ secrets.CONSUL_ACL_TOKEN }}
-      KEYCLOAK_USERNAME: ${{ secrets.KEYCLOAK_USERNAME }}
-      KEYCLOAK_PASSWORD: ${{ secrets.KEYCLOAK_PASSWORD }}
-      KEYCLOAK_SECRET: ${{ secrets.KEYCLOAK_SECRET }}
-      GITHUB_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-      GITHUB_ACTOR: __token__
     steps:
       - uses: actions/checkout@v4
 
@@ -26,10 +19,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
-      
+          server-id: ridehub-releases
+          server-username: ${{ secrets.REPOSILITE_USER || 'admin' }}
+          server-password: ${{ secrets.REPOSILITE_TOKEN }}
 
       - name: Extract version from tag
         run: |
@@ -39,10 +31,11 @@ jobs:
           echo "Publishing version: $VERSION"
 
       - name: Set Maven version
-        run: mvn -B versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
+        run: ./mvnw -B versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
 
       - name: Build and Package
-        run: mvn -B clean package -DskipTests
+        run: ./mvnw -B clean package -DskipTests
 
-      - name: Deploy to GitHub Packages
-        run: mvn -B deploy -DskipTests
+      - name: Deploy to Reposilite
+        run: ./mvnw -B deploy -DskipTests
+

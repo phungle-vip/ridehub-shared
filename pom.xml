@@ -11,16 +11,23 @@
   </parent>
   <groupId>com.ridehub.clients</groupId>
   <artifactId>client-open-feign-avro</artifactId>
-  <version>0.1.0</version>
+  <version>1.0.0</version>
   <name>client-open-feign-avro</name>
   <packaging>jar</packaging>
   <distributionManagement>
     <repository>
-      <id>github</id>
-      <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/phungle-vip/ridehub-shared</url>
+      <id>ridehub-releases</id>
+      <name>RideHub Reposilite Releases</name>
+      <url>https://repo.phungvip.io.vn/releases</url>
     </repository>
   </distributionManagement>
+  <repositories>
+    <repository>
+      <id>ridehub-releases</id>
+      <name>RideHub Reposilite Releases</name>
+      <url>https://repo.phungvip.io.vn/releases</url>
+    </repository>
+  </repositories>
    <properties>
     <java.version>17</java.version>
     <spring-cloud.version>2024.0.1</spring-cloud.version>
@@ -60,7 +67,7 @@
     <dependency>
       <groupId>com.ridehub</groupId>
       <artifactId>ridehub-contract</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>1.0.0</version>
     </dependency>
     <!-- OpenFeign -->
     <dependency>
@@ -123,12 +130,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
       <optional>true</optional>
-    </dependency>
-    <!-- JSch for SSH tunneling -->
-    <dependency>
-      <groupId>com.jcraft</groupId>
-      <artifactId>jsch</artifactId>
-      <version>0.1.55</version>
     </dependency>
     <!-- Spring Cloud Consul for service registration -->
     <dependency>

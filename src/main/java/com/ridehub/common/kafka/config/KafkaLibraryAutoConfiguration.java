@@ -32,13 +32,6 @@ import java.util.Map;
 @EnableConfigurationProperties({ KafkaLibraryProperties.class })
 public class KafkaLibraryAutoConfiguration {
 
-    @Bean(name = "kafkaObjectMapper")
-    public ObjectMapper kafkaObjectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        return objectMapper;
-    }
-
     @Bean
     @ConditionalOnMissingBean
     public RetryTemplate kafkaRetryTemplate() {
@@ -81,9 +74,10 @@ public class KafkaLibraryAutoConfiguration {
     public KafkaUtilityService kafkaUtilityService(
             EventDispatcher dispatcher,
             Map<String, SseEmitter> emitters,
-            @Qualifier("kafkaObjectMapper") ObjectMapper objectMapper,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper,
             KafkaLibraryProperties properties) {
-        return new KafkaUtilityService(dispatcher, emitters, objectMapper,
+        ObjectMapper om = (objectMapper != null) ? objectMapper : new ObjectMapper().registerModule(new JavaTimeModule());
+        return new KafkaUtilityService(dispatcher, emitters, om,
                 properties);
     }
 

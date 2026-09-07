@@ -38,23 +38,17 @@ public class RidehubFeignAutoConfiguration {
 
     // ================== Jackson Configuration ==================
     @Bean
-    @ConditionalOnMissingBean(name = "feignObjectMapper")
-    public ObjectMapper feignObjectMapper() {
-        var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
-
-    @Bean
     @ConditionalOnMissingBean(name = "feignEncoder")
-    public Encoder feignEncoder(@Qualifier("feignObjectMapper") ObjectMapper om) {
-        return new JacksonEncoder(om);
+    public Encoder feignEncoder(@org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper om) {
+        ObjectMapper mapper = (om != null) ? om : new ObjectMapper().registerModule(new JavaTimeModule());
+        return new JacksonEncoder(mapper);
     }
 
     @Bean
     @ConditionalOnMissingBean(name = "feignDecoder")
-    public Decoder feignDecoder(@Qualifier("feignObjectMapper") ObjectMapper om) {
-        return new JacksonDecoder(om);
+    public Decoder feignDecoder(@org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper om) {
+        ObjectMapper mapper = (om != null) ? om : new ObjectMapper().registerModule(new JavaTimeModule());
+        return new JacksonDecoder(mapper);
     }
 
     // ================== Authentication Configuration ==================
