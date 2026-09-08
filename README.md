@@ -34,9 +34,9 @@ ridehub-shared/
 Khai báo dependency trong `pom.xml` của microservice:
 ```xml
 <dependency>
-  <groupId>com.ridehub.clients</groupId>
-  <artifactId>client-open-feign-avro</artifactId>
-  <version>0.1.0</version>
+  <groupId>com.ridehub</groupId>
+  <artifactId>ridehub-shared</artifactId>
+  <version>1.0.0</version>
 </dependency>
 ```
 

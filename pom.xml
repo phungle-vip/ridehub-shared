@@ -2,269 +2,302 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.4</version>
-    <relativePath/>
-  </parent>
-  <groupId>com.ridehub.clients</groupId>
-  <artifactId>client-open-feign-avro</artifactId>
-  <version>1.0.0</version>
-  <name>client-open-feign-avro</name>
-  <packaging>jar</packaging>
-  <distributionManagement>
-    <repository>
-      <id>ridehub-releases</id>
-      <name>RideHub Reposilite Releases</name>
-      <url>https://repo.phungvip.io.vn/releases</url>
-    </repository>
-  </distributionManagement>
-  <repositories>
-    <repository>
-      <id>ridehub-releases</id>
-      <name>RideHub Reposilite Releases</name>
-      <url>https://repo.phungvip.io.vn/releases</url>
-    </repository>
-  </repositories>
-   <properties>
-    <java.version>17</java.version>
-    <spring-cloud.version>2024.0.1</spring-cloud.version>
-    <openapi.generator.version>7.14.0</openapi.generator.version>
-    <!-- Keycloak (for scripts) -->
-    <keycloak.token.url>https://keycloak.phungvip.io.vn/realms/jhipster/protocol/openid-connect/token</keycloak.token.url>
-    <keycloak.clientId>web_app</keycloak.clientId>
-    <keycloak.username>${env.KEYCLOAK_USERNAME}</keycloak.username>
-    <keycloak.password>${env.KEYCLOAK_PASSWORD}</keycloak.password>
-    <keycloak.secret>${env.KEYCLOAK_SECRET}</keycloak.secret>
-    <!-- Consul + Gateway -->
-    <consul.url>https://consul.phungvip.io.vn</consul.url>
-    <consul.acl-token>${env.CONSUL_ACL_TOKEN}</consul.acl-token>
-    <gateway.url>https://apigateway.phungvip.io.vn</gateway.url>
-    <!-- OpenAPI paths -->
-    <openapi.auth.file>${project.build.directory}/openapi-auth.properties</openapi.auth.file>
-    <openapi.dir>${project.build.directory}/openapi</openapi.dir>
-    <!-- IMPORTANT: generate directly into src/main/java -->
-    <openapi.generated.dir>${project.basedir}/src/main/java</openapi.generated.dir>
-    <service.name.pattern>^ms[-_]?.*</service.name.pattern>
-    <!-- Avro runtime (schemas provided by ridehub-contract) -->
-    <avro.version>1.12.0</avro.version>
-  </properties>
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-dependencies</artifactId>
-        <version>${spring-cloud.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-  <dependencies>
-    <!-- RideHub Contract (Schemas, Models & Events) -->
-    <dependency>
-      <groupId>com.ridehub</groupId>
-      <artifactId>ridehub-contract</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <!-- OpenFeign -->
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-openfeign</artifactId>
-    </dependency>
-    <!-- Generated client deps -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-validation</artifactId>
-    </dependency>
+    <modelVersion>4.0.0</modelVersion>
 
-    <dependency>
-      <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <version>2.2.22</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openapitools</groupId>
-      <artifactId>jackson-databind-nullable</artifactId>
-      <version>0.2.6</version>
-    </dependency>
-    <!-- Avro runtime -->
-    <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
-      <version>${avro.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.github.openfeign</groupId>
-      <artifactId>feign-jackson</artifactId>
-      <version>13.2</version>
-      <!-- match your Feign core version -->
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.17.2</version>
-      <!-- align with your jackson-databind -->
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jdk8</artifactId>
-      <version>2.17.2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-webmvc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-stream-kafka</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.retry</groupId>
-      <artifactId>spring-retry</artifactId>
-      <version>1.3.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <!-- Spring Cloud Consul for service registration -->
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-consul-discovery</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-consul-config</artifactId>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <!-- Avro schemas are now provided by ridehub-contract dependency -->
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
-        <configuration>
-          <release>${java.version}</release>
-          <compilerArgs>
-            <arg>-parameters</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>3.3.1</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <profiles>
-    <profile>
-      <id>run-openapi</id>
-      <!-- Activate by either -Prun-openapi OR -Drun-openapi -->
-      <activation>
-        <property>
-          <name>run-openapi</name>
-        </property>
-      </activation>
-      <build>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.4</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.ridehub</groupId>
+    <artifactId>ridehub-shared</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>ridehub-shared</name>
+    <description>RideHub Shared Library &amp; Spring Boot Auto-Configuration</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Library & Framework Versions -->
+        <spring-cloud.version>2024.0.1</spring-cloud.version>
+        <openapi.generator.version>7.14.0</openapi.generator.version>
+        <avro.version>1.12.0</avro.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+
+        <!-- Keycloak (for OpenAPI token retrieval scripts) -->
+        <keycloak.token.url>https://keycloak.phungvip.io.vn/realms/jhipster/protocol/openid-connect/token</keycloak.token.url>
+        <keycloak.clientId>web_app</keycloak.clientId>
+        <keycloak.username>${env.KEYCLOAK_USERNAME}</keycloak.username>
+        <keycloak.password>${env.KEYCLOAK_PASSWORD}</keycloak.password>
+        <keycloak.secret>${env.KEYCLOAK_SECRET}</keycloak.secret>
+
+        <!-- Consul + Gateway -->
+        <consul.url>https://consul.phungvip.io.vn</consul.url>
+        <consul.acl-token>${env.CONSUL_ACL_TOKEN}</consul.acl-token>
+        <gateway.url>https://apigateway.phungvip.io.vn</gateway.url>
+
+        <!-- OpenAPI Generator Paths -->
+        <openapi.auth.file>${project.build.directory}/openapi-auth.properties</openapi.auth.file>
+        <openapi.dir>${project.build.directory}/openapi</openapi.dir>
+        <openapi.generated.dir>${project.basedir}/src/main/java</openapi.generated.dir>
+        <service.name.pattern>^ms[-_]?.*</service.name.pattern>
+    </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>ridehub-releases</id>
+            <name>RideHub Reposilite Releases</name>
+            <url>https://repo.phungvip.io.vn/releases</url>
+        </repository>
+    </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>ridehub-releases</id>
+            <name>RideHub Reposilite Releases</name>
+            <url>https://repo.phungvip.io.vn/releases</url>
+        </repository>
+    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- RideHub Contract (Schemas, Models & Events) -->
+        <dependency>
+            <groupId>com.ridehub</groupId>
+            <artifactId>ridehub-contract</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- Spring Cloud OpenFeign -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- Validation & Swagger -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.22</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.2.6</version>
+        </dependency>
+
+        <!-- Avro Runtime -->
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
+
+        <!-- Jackson & Feign Datatypes -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-jackson</artifactId>
+            <version>13.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+
+        <!-- Web & Messaging -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+            <version>1.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Spring Cloud Consul (Discovery & Config) -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-consul-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-consul-config</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
         <plugins>
-          <!-- Load token (only when profile is active) -->
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>properties-maven-plugin</artifactId>
-            <version>1.2.1</version>
-            <executions>
-              <execution>
-                <id>load-token</id>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>read-project-properties</goal>
-                </goals>
+            <!-- Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                  <files>
-                    <file>${openapi.auth.file}</file>
-                  </files>
+                    <release>${java.version}</release>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
                 </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- Run your shell scripts ONLY under this profile -->
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>3.5.0</version>
-            <executions>
-              <execution>
-                <id>fetch-token</id>
-                <phase>validate</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>bash</executable>
-                  <arguments>
-                    <argument>${project.basedir}/scripts/fetch-token.sh</argument>
-                    <argument>${keycloak.token.url}</argument>
-                    <argument>${keycloak.clientId}</argument>
-                    <argument>${keycloak.username}</argument>
-                    <argument>${keycloak.password}</argument>
-                    <argument>${openapi.auth.file}</argument>
-                    <argument>${keycloak.secret}</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>download-all-openapis</id>
-                <phase>generate-sources</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>bash</executable>
-                  <arguments>
-                    <argument>${project.basedir}/scripts/consul-download-openapis.sh</argument>
-                    <argument>${openapi.auth.file}</argument>
-                    <argument>${consul.url}</argument>
-                    <argument>${consul.acl-token}</argument>
-                    <argument>${gateway.url}</argument>
-                    <argument>${openapi.dir}</argument>
-                    <argument>${service.name.pattern}</argument>
-                    <argument>gateway</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>generate-all-clients</id>
-                <phase>generate-sources</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>bash</executable>
-                  <arguments>
-                    <argument>${project.basedir}/scripts/generate-clients.sh</argument>
-                    <argument>${openapi.dir}</argument>
-                    <argument>${openapi.generated.dir}</argument>
-                    <argument>${openapi.generator.version}</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
+            </plugin>
+
+            <!-- Source Plugin (attach sources jar for Reposilite) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
-      </build>
-    </profile>
-  </profiles>
+    </build>
+
+    <profiles>
+        <!-- Profile for OpenAPI Client Generation -->
+        <profile>
+            <id>run-openapi</id>
+            <activation>
+                <property>
+                    <name>run-openapi</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Load Auth Properties -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>properties-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>load-token</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>read-project-properties</goal>
+                                </goals>
+                                <configuration>
+                                    <files>
+                                        <file>${openapi.auth.file}</file>
+                                    </files>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Fetch Token, Download OpenAPIs & Generate Clients -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>fetch-token</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/scripts/fetch-token.sh</argument>
+                                        <argument>${keycloak.token.url}</argument>
+                                        <argument>${keycloak.clientId}</argument>
+                                        <argument>${keycloak.username}</argument>
+                                        <argument>${keycloak.password}</argument>
+                                        <argument>${openapi.auth.file}</argument>
+                                        <argument>${keycloak.secret}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-all-openapis</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/scripts/consul-download-openapis.sh</argument>
+                                        <argument>${openapi.auth.file}</argument>
+                                        <argument>${consul.url}</argument>
+                                        <argument>${consul.acl-token}</argument>
+                                        <argument>${gateway.url}</argument>
+                                        <argument>${openapi.dir}</argument>
+                                        <argument>${service.name.pattern}</argument>
+                                        <argument>gateway</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>generate-all-clients</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/scripts/generate-clients.sh</argument>
+                                        <argument>${openapi.dir}</argument>
+                                        <argument>${openapi.generated.dir}</argument>
+                                        <argument>${openapi.generator.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
