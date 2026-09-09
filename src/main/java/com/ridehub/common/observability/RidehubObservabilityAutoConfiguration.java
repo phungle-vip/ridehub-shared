@@ -1,0 +1,27 @@
+package com.ridehub.common.observability;
+
+import jakarta.servlet.Filter;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+
+@AutoConfiguration
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@ConditionalOnClass(Filter.class)
+public class RidehubObservabilityAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(name = "mdcLoggingFilterRegistration")
+    public FilterRegistrationBean<MdcLoggingFilter> mdcLoggingFilterRegistration() {
+        FilterRegistrationBean<MdcLoggingFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new MdcLoggingFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("mdcLoggingFilter");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
+        return registration;
+    }
+}

@@ -55,6 +55,14 @@ public class RidehubFeignProperties {
     private String clientSecret; // Keycloak client secret
     private String scope; // optional
 
+    // ================== Resilience & Timeout Properties ==================
+    private int connectTimeoutMillis = 2000;
+    private int readTimeoutMillis = 5000;
+    private boolean retryEnabled = true;
+    private int retryMaxAttempts = 3;
+    private long retryPeriodMillis = 100;
+    private long retryMaxPeriodMillis = 1000;
+
     // ================== Common Properties ==================
     /**
      * Context path for services (rarely used)
@@ -63,6 +71,53 @@ public class RidehubFeignProperties {
     private String contextPath = "";
 
     // Getters and Setters
+    public int getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
+    }
+
+    public void setConnectTimeoutMillis(int connectTimeoutMillis) {
+        this.connectTimeoutMillis = connectTimeoutMillis;
+    }
+
+    public int getReadTimeoutMillis() {
+        return readTimeoutMillis;
+    }
+
+    public void setReadTimeoutMillis(int readTimeoutMillis) {
+        this.readTimeoutMillis = readTimeoutMillis;
+    }
+
+    public boolean isRetryEnabled() {
+        return retryEnabled;
+    }
+
+    public void setRetryEnabled(boolean retryEnabled) {
+        this.retryEnabled = retryEnabled;
+    }
+
+    public int getRetryMaxAttempts() {
+        return retryMaxAttempts;
+    }
+
+    public void setRetryMaxAttempts(int retryMaxAttempts) {
+        this.retryMaxAttempts = retryMaxAttempts;
+    }
+
+    public long getRetryPeriodMillis() {
+        return retryPeriodMillis;
+    }
+
+    public void setRetryPeriodMillis(long retryPeriodMillis) {
+        this.retryPeriodMillis = retryPeriodMillis;
+    }
+
+    public long getRetryMaxPeriodMillis() {
+        return retryMaxPeriodMillis;
+    }
+
+    public void setRetryMaxPeriodMillis(long retryMaxPeriodMillis) {
+        this.retryMaxPeriodMillis = retryMaxPeriodMillis;
+    }
     public String getTokenUrl() {
         return tokenUrl;
     }

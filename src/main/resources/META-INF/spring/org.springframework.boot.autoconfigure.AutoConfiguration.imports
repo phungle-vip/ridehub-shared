@@ -1,2 +1,4 @@
 com.ridehub.common.kafka.config.KafkaLibraryAutoConfiguration
 com.ridehub.common.feign.RidehubFeignAutoConfiguration
+com.ridehub.common.redis.RidehubRedisAutoConfiguration
+com.ridehub.common.observability.RidehubObservabilityAutoConfiguration

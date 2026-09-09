@@ -39,6 +39,19 @@ public class RidehubFeignFactory {
     @Autowired
     private LoadBalancerClient loadBalancerClient;
 
+    @Autowired(required = false)
+    private feign.codec.ErrorDecoder errorDecoder;
+
+    @Autowired(required = false)
+    private feign.Request.Options requestOptions;
+
+    @Autowired(required = false)
+    private feign.Retryer retryer;
+
+    @Autowired(required = false)
+    @org.springframework.beans.factory.annotation.Qualifier("feignTraceInterceptor")
+    private RequestInterceptor traceInterceptor;
+
     public RidehubFeignFactory(
             ApplicationContext ctx,
             Encoder encoder,
@@ -61,7 +74,19 @@ public class RidehubFeignFactory {
                 .customize(builder -> {
                     builder.encoder(encoder);
                     builder.decoder(decoder);
+                    if (errorDecoder != null) {
+                        builder.errorDecoder(errorDecoder);
+                    }
+                    if (requestOptions != null) {
+                        builder.options(requestOptions);
+                    }
+                    if (retryer != null) {
+                        builder.retryer(retryer);
+                    }
                     builder.requestInterceptor(auth);
+                    if (traceInterceptor != null) {
+                        builder.requestInterceptor(traceInterceptor);
+                    }
                     builder.logLevel(level);
                 })
                 .build();
@@ -214,6 +239,19 @@ public class RidehubFeignFactory {
         private Decoder feignDecoder;
         private String contextPath = "";
 
+        @Autowired(required = false)
+        private feign.codec.ErrorDecoder errorDecoder;
+
+        @Autowired(required = false)
+        private feign.Request.Options requestOptions;
+
+        @Autowired(required = false)
+        private feign.Retryer retryer;
+
+        @Autowired(required = false)
+        @org.springframework.beans.factory.annotation.Qualifier("feignTraceInterceptor")
+        private RequestInterceptor traceInterceptor;
+
         public LazyProxyFactoryBean(Class<T> clientInterface, String serviceId) {
             this.clientInterface = clientInterface;
             this.serviceId = serviceId;
@@ -263,28 +301,37 @@ public class RidehubFeignFactory {
             return (T) Proxy.newProxyInstance(
                     clientInterface.getClassLoader(),
                     new Class<?>[]{clientInterface},
-                    new LazyFeignHandler<>(serviceId, clientInterface, authRequestInterceptor,
-                            feignEncoder, feignDecoder, loadBalancerClient, contextPath));
+                    new LazyFeignHandler<>(serviceId, clientInterface, authRequestInterceptor, traceInterceptor,
+                            feignEncoder, feignDecoder, errorDecoder, requestOptions, retryer, loadBalancerClient, contextPath));
         }
 
         private static class LazyFeignHandler<U> implements InvocationHandler {
             private final String serviceId;
             private final Class<U> clazz;
             private final RequestInterceptor auth;
+            private final RequestInterceptor traceInterceptor;
             private final Encoder encoder;
             private final Decoder decoder;
+            private final feign.codec.ErrorDecoder errorDecoder;
+            private final feign.Request.Options requestOptions;
+            private final feign.Retryer retryer;
             private final LoadBalancerClient loadBalancerClient;
             private final String contextPath;
             private volatile U feignClient;
 
-            LazyFeignHandler(String serviceId, Class<U> clazz, RequestInterceptor auth,
-                            Encoder encoder, Decoder decoder, LoadBalancerClient loadBalancerClient,
-                            String contextPath) {
+            LazyFeignHandler(String serviceId, Class<U> clazz, RequestInterceptor auth, RequestInterceptor traceInterceptor,
+                            Encoder encoder, Decoder decoder, feign.codec.ErrorDecoder errorDecoder,
+                            feign.Request.Options requestOptions, feign.Retryer retryer,
+                            LoadBalancerClient loadBalancerClient, String contextPath) {
                 this.serviceId = serviceId;
                 this.clazz = clazz;
                 this.auth = auth;
+                this.traceInterceptor = traceInterceptor;
                 this.encoder = encoder;
                 this.decoder = decoder;
+                this.errorDecoder = errorDecoder;
+                this.requestOptions = requestOptions;
+                this.retryer = retryer;
                 this.loadBalancerClient = loadBalancerClient;
                 this.contextPath = contextPath;
             }
@@ -316,13 +363,27 @@ public class RidehubFeignFactory {
                                         + (contextPath.startsWith("/") ? contextPath : "/" + contextPath);
                             }
 
-                            feignClient = Feign.builder()
+                            feign.Feign.Builder builder = Feign.builder()
                                     .encoder(encoder)
                                     .decoder(decoder)
                                     .requestInterceptor(auth)
                                     .logger(new Slf4jLogger(clazz))
-                                    .logLevel(Logger.Level.FULL)
-                                    .target(clazz, baseUrl);
+                                    .logLevel(Logger.Level.FULL);
+
+                            if (errorDecoder != null) {
+                                builder.errorDecoder(errorDecoder);
+                            }
+                            if (requestOptions != null) {
+                                builder.options(requestOptions);
+                            }
+                            if (retryer != null) {
+                                builder.retryer(retryer);
+                            }
+                            if (traceInterceptor != null) {
+                                builder.requestInterceptor(traceInterceptor);
+                            }
+
+                            feignClient = builder.target(clazz, baseUrl);
                         }
                     }
                 }

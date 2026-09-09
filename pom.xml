@@ -13,7 +13,7 @@
 
     <groupId>com.ridehub</groupId>
     <artifactId>ridehub-shared</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>ridehub-shared</name>
@@ -30,6 +30,7 @@
         <spring-cloud.version>2024.0.1</spring-cloud.version>
         <openapi.generator.version>7.14.0</openapi.generator.version>
         <avro.version>1.12.0</avro.version>
+        <redisson.version>3.45.1</redisson.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 
@@ -58,6 +59,11 @@
             <name>RideHub Reposilite Releases</name>
             <url>https://repo.phungvip.io.vn/releases</url>
         </repository>
+        <snapshotRepository>
+            <id>ridehub-snapshots</id>
+            <name>RideHub Reposilite Snapshots</name>
+            <url>https://repo.phungvip.io.vn/snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <repositories>
@@ -69,6 +75,15 @@
             <id>ridehub-releases</id>
             <name>RideHub Reposilite Releases</name>
             <url>https://repo.phungvip.io.vn/releases</url>
+        </repository>
+        <repository>
+            <id>ridehub-snapshots</id>
+            <name>RideHub Reposilite Snapshots</name>
+            <url>https://repo.phungvip.io.vn/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -89,7 +104,26 @@
         <dependency>
             <groupId>com.ridehub</groupId>
             <artifactId>ridehub-contract</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Spring Boot AOP (for Distributed Lock & Aspect) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- Redis & Redisson (Optional for Microservices that use Redis) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>${redisson.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- Spring Cloud OpenFeign -->
@@ -142,6 +176,11 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -289,6 +328,38 @@
                                     <arguments>
                                         <argument>${project.basedir}/scripts/generate-clients.sh</argument>
                                         <argument>${openapi.dir}</argument>
+                                        <argument>${openapi.generated.dir}</argument>
+                                        <argument>${openapi.generator.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile for Offline OpenAPI Client Generation directly from ridehub-contract -->
+        <profile>
+            <id>run-openapi-offline</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-all-clients-offline</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/scripts/generate-clients.sh</argument>
+                                        <argument>${project.basedir}/../ridehub-contract/src/main/openapi</argument>
                                         <argument>${openapi.generated.dir}</argument>
                                         <argument>${openapi.generator.version}</argument>
                                     </arguments>

@@ -66,6 +66,42 @@ public class RidehubFeignAutoConfiguration {
         return Logger.Level.FULL;
     }
 
+    // ================== Resilience & Error Handling Configuration ==================
+    @Bean
+    @ConditionalOnMissingBean(feign.codec.ErrorDecoder.class)
+    public feign.codec.ErrorDecoder feignErrorDecoder(@org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper om) {
+        return new RidehubFeignErrorDecoder(om);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "feignTraceInterceptor")
+    public RequestInterceptor feignTraceInterceptor() {
+        return new RidehubFeignTraceInterceptor();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public feign.Request.Options feignRequestOptions(RidehubFeignProperties props) {
+        return new feign.Request.Options(
+                props.getConnectTimeoutMillis(),
+                java.util.concurrent.TimeUnit.MILLISECONDS,
+                props.getReadTimeoutMillis(),
+                java.util.concurrent.TimeUnit.MILLISECONDS,
+                true);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public feign.Retryer feignRetryer(RidehubFeignProperties props) {
+        if (props.isRetryEnabled()) {
+            return new feign.Retryer.Default(
+                    props.getRetryPeriodMillis(),
+                    props.getRetryMaxPeriodMillis(),
+                    props.getRetryMaxAttempts());
+        }
+        return feign.Retryer.NEVER_RETRY;
+    }
+
 
 
     // ================== AUTOMATIC FEIGN CLIENT REGISTRATION ==================

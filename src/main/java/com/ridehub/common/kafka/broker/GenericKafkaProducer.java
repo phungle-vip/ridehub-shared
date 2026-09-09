@@ -50,10 +50,18 @@ public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
 
         if (queued != null) {
             log.info("Supplying event with unique key: {} to reactive stream", queued.key);
-            return MessageBuilder.withPayload(queued.envelope)
+            MessageBuilder<EventEnvelope> builder = MessageBuilder.withPayload(queued.envelope)
                     .setHeader(KafkaHeaders.KEY, queued.key)
-                    .setHeader("serviceName", serviceName)
-                    .build();
+                    .setHeader("serviceName", serviceName);
+
+            if (queued.correlationId != null) {
+                builder.setHeader("X-Correlation-Id", queued.correlationId);
+            }
+            if (queued.traceparent != null) {
+                builder.setHeader("traceparent", queued.traceparent);
+            }
+
+            return builder.build();
         } else {
             log.trace("No event to supply, returning null.");
             return null;
@@ -75,7 +83,10 @@ public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
                 return null;
             }
 
-            eventQueue.offer(new QueuedEvent(envelope, uniqueKey));
+            String correlationId = org.slf4j.MDC.get("correlationId");
+            String traceparent = org.slf4j.MDC.get("traceparent");
+
+            eventQueue.offer(new QueuedEvent(envelope, uniqueKey, correlationId, traceparent));
 
             log.info("Event {} queued successfully with key: {}", eventName, uniqueKey);
             return uniqueKey;
@@ -116,8 +127,8 @@ public class GenericKafkaProducer implements Supplier<Message<EventEnvelope>> {
     }
 
     /**
-     * Internal record to hold queued events with their keys.
+     * Internal record to hold queued events with their keys and tracing context.
      */
-    private record QueuedEvent(EventEnvelope envelope, String key) {
+    private record QueuedEvent(EventEnvelope envelope, String key, String correlationId, String traceparent) {
     }
 }
