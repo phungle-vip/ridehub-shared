@@ -23,7 +23,7 @@ jobs:
           java-version: '17'
           server-id: ridehub-releases
           server-username: ${{ secrets.REPOSILITE_USER || 'admin' }}
-          server-password: ${{ secrets.REPOSILITE_TOKEN }}
+          server-password: ${{ secrets.REPOSILITE_TOKEN || 'f4security' }}
 
       - name: Configure Maven Snapshots Server Auth
         run: |
@@ -34,12 +34,12 @@ jobs:
               <server>
                 <id>ridehub-releases</id>
                 <username>${{ secrets.REPOSILITE_USER || 'admin' }}</username>
-                <password>${{ secrets.REPOSILITE_TOKEN }}</password>
+                <password>${{ secrets.REPOSILITE_TOKEN || 'f4security' }}</password>
               </server>
               <server>
                 <id>ridehub-snapshots</id>
                 <username>${{ secrets.REPOSILITE_USER || 'admin' }}</username>
-                <password>${{ secrets.REPOSILITE_TOKEN }}</password>
+                <password>${{ secrets.REPOSILITE_TOKEN || 'f4security' }}</password>
               </server>
             </servers>
           </settings>
